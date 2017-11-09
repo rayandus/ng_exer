@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Task 2 - Each restaurant will have at least 1 food specialty.</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+	<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+	<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAsUBfqJUwAaKUPIYCNRuz0VbXljkI4KpY&callback=initMap"></script>
+    <style>
+      #map {
+        height: 100%;
+      }
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+		var m_map;
+		
+		// initialize map
+		function initMap() {
+			
+			m_map = new google.maps.Map(document.getElementById('map'), {
+			  zoom: 14,
+			  center: {lat: 10.32152, lng: 123.904266}
+			});
+			
+			// initialize info window
+			var m_infowindow = new google.maps.InfoWindow();
+			
+			// load restaurant data with specialties properties
+			$.getJSON('https://rayandus.github.io/exer_resource/cebu-resto-geojson-specialty.json', function(result) {
+				var m_features = result['features'];
+				
+				//markers = map.data.addGeoJson(result);
+				
+				// traverse record
+				$.each(m_features, function(p_key, p_val){
+					// add marker
+					var m_marker = new google.maps.Marker({
+						position: new google.maps.LatLng(p_val.geometry.coordinates[1], p_val.geometry.coordinates[0]),
+						animation: google.maps.Animation.DROP,
+						icon: new google.maps.MarkerImage('https://rayandus.github.io/exer_resource/utensils.png', null, null, null, new google.maps.Size(16,16)),
+						map: m_map
+					});
+					
+					// add restaurant info on marker click
+					m_marker.addListener('click', function() {
+						var m_specialties = 'Specialties:<br/>';
+						$.each(p_val.properties.specialty, function(p_k, p_v){
+							m_specialties = m_specialties + '&bull; ' + p_v + '<br/>';
+						});
+						
+						var m_content = '<strong>'+p_val.properties.name+'</strong><br/>'+
+										p_val.properties.description+'<br/>'+
+										m_specialties;
+						
+						m_infowindow.setContent(m_content);
+						m_infowindow.open(m_map, m_marker);
+					});
+				});
+			});
+		}
+    </script>
+  </body>
+</html>

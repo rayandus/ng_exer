@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Task 3 - A layer panel that can filter the restaurant type to show</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+	<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+	<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAsUBfqJUwAaKUPIYCNRuz0VbXljkI4KpY&callback=initMap"></script>
+    <style>
+	  #map {
+        height: 100%;
+      }
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+	  
+	  #panel_type {
+        font-family: Arial, sans-serif;
+        background: #fff;
+        padding: 10px;
+        margin: 10px;
+        border: 2px solid #fff;
+		border-radius: 3px;
+		box-shadow: 0 2px 6px rgba(0,0,0,.3);
+      }
+      #panel_type h3 {
+        margin-top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+	<div id="panel_type"><h3>Restaurant Type</h3></div>
+    <script>
+		var m_map;
+		
+		// initialize map
+		function initMap() {
+			m_map = new google.maps.Map(document.getElementById('map'), {
+			  zoom: 14,
+			  center: {lat: 10.32152, lng: 123.904266}
+			});
+			
+			// initialize info window
+			var m_infowindow = new google.maps.InfoWindow();
+			var m_marker = [];
+			var m_features;
+			var m_types = [];
+			// load restaurant data with type property
+			$.getJSON('https://rayandus.github.io/exer_resource/cebu-resto-geojson-restotype.json', function(result) {
+				m_features = result['features'];
+				
+				//markers = map.data.addGeoJson(result);
+				
+				// traverse record
+				$.each(m_features, function(p_key, p_val){
+				
+					var m;
+					// add marker
+					m = new google.maps.Marker({
+						position: new google.maps.LatLng(p_val.geometry.coordinates[1], p_val.geometry.coordinates[0]),
+						animation: google.maps.Animation.DROP,
+						icon: new google.maps.MarkerImage('https://rayandus.github.io/exer_resource/utensils.png', null, null, null, new google.maps.Size(16,16)),
+						map: m_map
+					});
+					
+					// add restaurant info on marker click
+					m.addListener('click', function() {
+						var m_specialties = 'Specialties:<br/>';
+						$.each(p_val.properties.specialty, function(p_k, p_v){
+							m_specialties = m_specialties + '&bull; ' + p_v + '<br/>';
+						});
+						
+						var m_content = '<strong>'+p_val.properties.name+'</strong><br/>'+
+										p_val.properties.description+'<br/>'+
+										m_specialties;
+						
+						m_infowindow.setContent(m_content);
+						m_infowindow.open(m_map, m);
+					});
+					
+					if ( !m_types.includes(p_val.properties.type) )
+						m_types.push(p_val.properties.type);
+					
+					m_marker.push(m);
+				});	
+			});
+			
+			// add panel restaurant type
+			var m_panel_type = $('#panel_type');
+			
+			// get restaurant types for dynamic listing on m_panel_type, but m_types array is empty ???
+			/*
+				for(i=0; i<m_types.length; i++) {
+					m_panel_type.append($('<div><input type="checkbox" checked="checked" name="rtype" value="'+m_types[0]+'"/> '+m_types[0]+'</div>'));
+				}
+			*/
+			
+			m_panel_type.append($('<div><input type="checkbox" checked="checked" name="rtype" value="Casual Dining"/> Casual Dining</div>'+
+								  '<div><input type="checkbox" checked="checked" name="rtype" value="Fine Dining"/> Fine Dining</div>'+
+								  '<div><input type="checkbox" checked="checked" name="rtype" value="Native"/> Native</div>'+
+								  '<div><input type="checkbox" checked="checked" name="rtype" value="Quick Bites"/> Quick Bites</div>'));
+			
+			// add click event for toggling markers based on type
+			m_panel_type.on('click', ':checkbox', function(p_obj, p_evt){
+				var m_chkstate = $(this).is(':checked');
+				var m_chkvalue = $(this).val();
+				$.each(m_marker, function(p_k, p_v) {
+					if( m_chkvalue == m_features[p_k].properties.type ) {
+						p_v.setVisible(m_chkstate);
+					}
+				});
+			});
+			// position panel
+			m_map.controls[google.maps.ControlPosition.RIGHT_CENTER].push(m_panel_type[0]);
+		}
+    </script>
+  </body>
+</html>
